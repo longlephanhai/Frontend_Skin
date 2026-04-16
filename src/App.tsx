@@ -6,11 +6,16 @@ import HomePage from "./pages/client/home";
 import LayoutAdmin from "./pages/admin/layout";
 import UserPage from "./pages/admin/user";
 import DashBoardPage from "./pages/admin/dashboard";
+import LoginPage from "./pages/client/auth";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <HomePage />,
+  },
+  {
+    path: "/auth/login",
+    element: <LoginPage />,
   },
   {
     path: "/admin",

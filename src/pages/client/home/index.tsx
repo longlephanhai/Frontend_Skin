@@ -1,5 +1,5 @@
-import { Layout, Button, Typography, Row, Col, Card, Space } from 'antd';
-import { CameraOutlined, RocketOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Layout, Typography, Row, Col, Card } from 'antd';
+import { RocketOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import HeaderComponent from '../../../components/client/header';
 import FooterComponent from '../../../components/client/footer/inddex';
 import SkinUploadSection from '../../../components/client/upload/indexl';

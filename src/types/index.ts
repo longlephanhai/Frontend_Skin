@@ -50,5 +50,12 @@ declare global {
         },
     }
 
+    export type FaceDirection = 'front' | 'left' | 'right';
+
+    // Định nghĩa kết quả trả về của hàm check
+    export interface CheckPoseResult {
+        valid: boolean;
+        message?: string;
+    }
 
 }

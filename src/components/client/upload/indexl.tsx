@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Button, Space, message, Badge } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Typography, Button, Space, message, Badge, Spin } from 'antd';
 import {
     PictureOutlined,
     CheckCircleFilled,
     DeleteOutlined,
-    ScanOutlined
+    ScanOutlined,
+    LoadingOutlined
 } from '@ant-design/icons';
+import * as faceapi from 'face-api.js';
+import { checkFacePose } from '../../../helper'; 
 
 const { Title, Text } = Typography;
 
@@ -14,6 +17,7 @@ type Position = 'left' | 'front' | 'right';
 interface ImageState {
     file: File | null;
     preview: string | null;
+    isValidating: boolean;
 }
 
 interface UploadData {
@@ -24,67 +28,95 @@ interface UploadData {
 
 const SkinUploadSection = () => {
     const [data, setData] = useState<UploadData>({
-        left: { file: null, preview: null },
-        front: { file: null, preview: null },
-        right: { file: null, preview: null },
+        left: { file: null, preview: null, isValidating: false },
+        front: { file: null, preview: null, isValidating: false },
+        right: { file: null, preview: null, isValidating: false },
     });
 
     const [loading, setLoading] = useState<boolean>(false);
+    const [modelsLoaded, setModelsLoaded] = useState(false);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, position: Position) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                message.error("Vui lòng chỉ chọn tệp hình ảnh!");
-                return;
+
+    useEffect(() => {
+        const loadModels = async () => {
+            try {
+                const MODEL_URL = '/weights'; 
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                ]);
+                setModelsLoaded(true);
+            } catch (err) {
+                console.error(err);
+                message.error("AI Models failed to load!");
             }
+        };
+        loadModels();
+    }, []);
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setData(prev => ({
-                    ...prev,
-                    [position]: { file: file, preview: reader.result as string }
-                }));
-            };
-            reader.readAsDataURL(file);
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, position: Position) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            message.error("Vui lòng chỉ chọn tệp hình ảnh!");
+            return;
         }
+
+        if (!modelsLoaded) {
+            message.warning("AI đang khởi động, đợi tí nhé...");
+            return;
+        }
+
+        setData(prev => ({ ...prev, [position]: { ...prev[position], isValidating: true } }));
+
+        try {
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = imageUrl;
+
+            img.onload = async () => {
+                const result = await checkFacePose(img, position);
+                
+                if (result.valid) {
+                    setData(prev => ({
+                        ...prev,
+                        [position]: { file, preview: imageUrl, isValidating: false }
+                    }));
+                    message.success(`Ảnh ${labelMap[position]} hợp lệ!`);
+                } else {
+                    setData(prev => ({ ...prev, [position]: { file: null, preview: null, isValidating: false } }));
+                    message.error(result.message);
+                }
+            };
+        } catch (err) {
+            message.error("Lỗi kiểm tra hình ảnh.");
+            setData(prev => ({ ...prev, [position]: { ...prev[position], isValidating: false } }));
+        }
+        e.target.value = ''; 
     };
 
     const removeImage = (position: Position) => {
         setData(prev => ({
             ...prev,
-            [position]: { file: null, preview: null }
+            [position]: { file: null, preview: null, isValidating: false }
         }));
     };
 
+    const labelMap = { left: 'Mặt Trái', front: 'Chính Diện', right: 'Mặt Phải' };
+
     const handleAnalyze = async () => {
         const { left, front, right } = data;
-
         if (!left.file || !front.file || !right.file) {
-            return message.error("Bạn cần tải lên đủ 3 góc độ: Trái, Thẳng, và Phải!");
+            return message.error("Bạn cần tải lên đủ 3 góc độ hợp lệ!");
         }
-
         setLoading(true);
-
-        const formData = new FormData();
-        formData.append('left_view', left.file);
-        formData.append('front_view', front.file);
-        formData.append('right_view', right.file);
-
-        try {
-            console.log("Đang gửi FormData lên Server...");
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            message.success("Tải lên thành công! Đang đợi YOLOv11 xử lý...");
-        } catch (err) {
-            message.error("Lỗi hệ thống, vui lòng thử lại sau.");
-        } finally {
-            setLoading(false);
-        }
+        setLoading(false);
     };
 
     const UploadBox: React.FC<{ position: Position; label: string }> = ({ position, label }) => {
-        const hasImage = !!data[position].preview;
+        const item = data[position];
+        const hasImage = !!item.preview;
 
         return (
             <Col xs={24} md={8}>
@@ -98,35 +130,26 @@ const SkinUploadSection = () => {
                     }}
                 >
                     <div style={{ marginBottom: '12px' }}>
-                        <Text strong size-={16}>{label}</Text>
+                        <Text strong style={{ fontSize: '16px' }}>{label}</Text>
                     </div>
 
                     <div style={{
-                        width: '100%',
-                        height: '200px',
-                        background: '#f8f9fa',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        marginBottom: '15px',
-                        border: '1px solid #f0f0f0'
+                        width: '100%', height: '200px', background: '#f8f9fa',
+                        borderRadius: '12px', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', position: 'relative', marginBottom: '15px',
+                        border: '1px solid #f0f0f0', overflow: 'hidden'
                     }}>
-                        {hasImage ? (
+                        {item.isValidating ? (
+                            <div style={{ textAlign: 'center' }}>
+                                <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} />
+                                <div style={{ marginTop: 8 }}>Đang check mặt...</div>
+                            </div>
+                        ) : hasImage ? (
                             <>
-                                <img
-                                    src={data[position].preview!}
-                                    alt={label}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
-                                />
+                                <img src={item.preview!} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 <Button
-                                    danger
-                                    type="primary"
-                                    shape="circle"
-                                    icon={<DeleteOutlined />}
-                                    size="small"
-                                    onClick={() => removeImage(position)}
+                                    danger type="primary" shape="circle" icon={<DeleteOutlined />}
+                                    size="small" onClick={() => removeImage(position)}
                                     style={{ position: 'absolute', top: 8, right: 8 }}
                                 />
                             </>
@@ -138,26 +161,24 @@ const SkinUploadSection = () => {
                         )}
                     </div>
 
-                    {!hasImage ? (
+                    {!hasImage && !item.isValidating ? (
                         <Space direction="vertical" style={{ width: '100%' }}>
                             <Button
-                                block
-                                type="dashed"
-                                icon={<PictureOutlined />}
+                                block type="dashed" icon={<PictureOutlined />}
                                 onClick={() => document.getElementById(`file-${position}`)?.click()}
+                                disabled={!modelsLoaded}
                             >
                                 Chọn ảnh từ máy
                             </Button>
                             <input
-                                type="file"
-                                id={`file-${position}`}
-                                hidden
-                                accept="image/*"
-                                onChange={(e) => handleFileChange(e, position)}
+                                type="file" id={`file-${position}`} hidden
+                                accept="image/*" onChange={(e) => handleFileChange(e, position)}
                             />
                         </Space>
                     ) : (
-                        <Badge status="success" text={<Text style={{ color: '#52c41a' }}>Ảnh hợp lệ</Text>} />
+                        <div style={{ height: '32px' }}>
+                             {hasImage && <Badge status="success" text={<Text style={{ color: '#52c41a' }}>Ảnh hợp lệ</Text>} />}
+                        </div>
                     )}
                 </Card>
             </Col>
@@ -182,18 +203,12 @@ const SkinUploadSection = () => {
 
                 <div style={{ textAlign: 'center', marginTop: '60px' }}>
                     <Button
-                        type="primary"
-                        size="large"
-                        icon={<CheckCircleFilled />}
-                        loading={loading}
-                        onClick={handleAnalyze}
+                        type="primary" size="large" icon={<CheckCircleFilled />}
+                        loading={loading} onClick={handleAnalyze}
+                        disabled={!data.left.file || !data.front.file || !data.right.file}
                         style={{
-                            height: '60px',
-                            padding: '0 80px',
-                            borderRadius: '12px',
-                            fontSize: '20px',
-                            fontWeight: '600',
-                            background: '#1890ff'
+                            height: '60px', padding: '0 80px', borderRadius: '12px',
+                            fontSize: '20px', fontWeight: '600', background: '#1890ff'
                         }}
                     >
                         BẮT ĐẦU PHÂN TÍCH

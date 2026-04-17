@@ -7,6 +7,9 @@ import LayoutAdmin from "./pages/admin/layout";
 import UserPage from "./pages/admin/user";
 import DashBoardPage from "./pages/admin/dashboard";
 import LoginPage from "./pages/client/auth";
+import ResultPage from "./pages/client/result";
+
+
 
 const router = createBrowserRouter([
   {
@@ -16,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/auth/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/result",
+    element: <ResultPage />,
   },
   {
     path: "/admin",

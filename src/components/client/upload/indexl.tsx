@@ -8,7 +8,10 @@ import {
     LoadingOutlined
 } from '@ant-design/icons';
 import * as faceapi from 'face-api.js';
-import { checkFacePose } from '../../../helper'; 
+import { checkFacePose } from '../../../helper';
+import { callApiDetection } from '../../../api';
+import { useNavigate } from 'react-router-dom';
+
 
 const { Title, Text } = Typography;
 
@@ -32,7 +35,7 @@ const SkinUploadSection = () => {
         front: { file: null, preview: null, isValidating: false },
         right: { file: null, preview: null, isValidating: false },
     });
-
+    const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
 
@@ -40,7 +43,7 @@ const SkinUploadSection = () => {
     useEffect(() => {
         const loadModels = async () => {
             try {
-                const MODEL_URL = '/weights'; 
+                const MODEL_URL = '/weights';
                 await Promise.all([
                     faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -77,7 +80,7 @@ const SkinUploadSection = () => {
 
             img.onload = async () => {
                 const result = await checkFacePose(img, position);
-                
+
                 if (result.valid) {
                     setData(prev => ({
                         ...prev,
@@ -93,7 +96,7 @@ const SkinUploadSection = () => {
             message.error("Lỗi kiểm tra hình ảnh.");
             setData(prev => ({ ...prev, [position]: { ...prev[position], isValidating: false } }));
         }
-        e.target.value = ''; 
+        e.target.value = '';
     };
 
     const removeImage = (position: Position) => {
@@ -106,11 +109,25 @@ const SkinUploadSection = () => {
     const labelMap = { left: 'Mặt Trái', front: 'Chính Diện', right: 'Mặt Phải' };
 
     const handleAnalyze = async () => {
+        setLoading(true);
+        message.loading("Đang phân tích, đợi tí nhé...", 2);
         const { left, front, right } = data;
         if (!left.file || !front.file || !right.file) {
+            setLoading(false);
             return message.error("Bạn cần tải lên đủ 3 góc độ hợp lệ!");
         }
-        setLoading(true);
+        const response = await callApiDetection({
+            front: front.file,
+            left: left.file,
+            right: right.file
+        });
+        console.log(response);
+        if (response.statusCode == 201 && response.data) {
+            message.success("Phân tích thành công! Chuyển sang trang kết quả...");
+            navigate('/result', { state: { detectionData: response.data } });
+        } else {
+            message.error("Phân tích thất bại, thử lại sau nhé!");
+        }
         setLoading(false);
     };
 
@@ -177,7 +194,7 @@ const SkinUploadSection = () => {
                         </Space>
                     ) : (
                         <div style={{ height: '32px' }}>
-                             {hasImage && <Badge status="success" text={<Text style={{ color: '#52c41a' }}>Ảnh hợp lệ</Text>} />}
+                            {hasImage && <Badge status="success" text={<Text style={{ color: '#52c41a' }}>Ảnh hợp lệ</Text>} />}
                         </div>
                     )}
                 </Card>

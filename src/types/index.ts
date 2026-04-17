@@ -51,11 +51,34 @@ declare global {
     }
 
     export type FaceDirection = 'front' | 'left' | 'right';
-
-    // Định nghĩa kết quả trả về của hàm check
     export interface CheckPoseResult {
         valid: boolean;
         message?: string;
+    }
+
+    interface Detection {
+        label: string;
+        confidence: number;
+        bbox: number[];
+        crop_url: string;
+    }
+
+    interface ViewResult {
+        total: number;
+        stats?: Record<string, number>;
+        detections: Detection[];
+        visualization_url: string;
+    }
+
+    interface DetectionResponse {
+        total_acne: number;
+        stats: Record<string, number>;
+        results: {
+            front: ViewResult;
+            left: ViewResult;
+            right: ViewResult;
+        };
+        original_images: Record<string, string>;
     }
 
 }

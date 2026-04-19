@@ -1,13 +1,13 @@
-import { Card, Row, Col, Image, List, Typography, Modal, Button } from 'antd';
+import { Card, Row, Col, Image, List, Typography, Modal, Button, Radio, Space, Tag } from 'antd';
 import { skinConditionInfo } from '../../../helper/index';
-import { InfoCircleOutlined, GlobalOutlined } from '@ant-design/icons';
-
+import { InfoCircleOutlined, GlobalOutlined, EyeOutlined, FireOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 
 const { Text } = Typography;
 
-
-
 const ViewDetail = ({ view }: { view: any }) => {
+    const [viewMode, setViewMode] = useState<'detection' | 'heatmap' | 'gradcam'>('detection');
+
     const showInfo = (label: string) => {
         const info = skinConditionInfo[label];
         if (!info) return;
@@ -47,29 +47,69 @@ const ViewDetail = ({ view }: { view: any }) => {
             okButtonProps: { style: { borderRadius: '6px' } }
         });
     };
+
+
+    const getDisplayImage = () => {
+        if (viewMode === 'heatmap') return view.heatmap_url || view.visualization_url;
+        if (viewMode === 'gradcam') return view.gradcam_url || view.visualization_url;
+        return view.visualization_url;
+    };
+
     return (
         <Row gutter={24}>
             <Col span={16}>
-                <Card title="Ảnh phân tích AI">
-                    <Image
-                        src={view.visualization_url}
-                        style={{ borderRadius: 8, width: '100%' }}
-                        placeholder={true}
-                    />
+                <Card 
+                    title={
+                        <Space style={{ justifyContent: 'space-between', width: '100%' }}>
+                            <span>Ảnh phân tích AI</span>
+                            <Radio.Group 
+                                value={viewMode} 
+                                onChange={(e) => setViewMode(e.target.value)}
+                                buttonStyle="solid"
+                                size="small"
+                            >
+                                <Radio.Button value="detection"><EyeOutlined /> Nhận diện</Radio.Button>
+                                <Radio.Button value="heatmap"><FireOutlined /> Mật độ</Radio.Button>
+                                <Radio.Button value="gradcam"><ExperimentOutlined /> AI Insight</Radio.Button>
+                            </Radio.Group>
+                        </Space>
+                    }
+                >
+                    <div style={{ position: 'relative' }}>
+                        <Image
+                            src={getDisplayImage()}
+                            style={{ borderRadius: 8, width: '100%' }}
+                            placeholder={true}
+                        />
+                      
+                        {viewMode !== 'detection' && (
+                            <div style={{ 
+                                marginTop: 10, 
+                                padding: '8px 12px', 
+                                background: '#f0f5ff', 
+                                borderRadius: 4,
+                                border: '1px solid #adc6ff' 
+                            }}>
+                                <Text italic style={{ fontSize: '12px' }}>
+                                    {viewMode === 'heatmap' 
+                                        ? "Vùng màu nóng (đỏ/vàng) thể hiện mật độ tập trung của các vấn đề da." 
+                                        : "AI Insight: Các vệt sáng thể hiện những đặc trưng mà AI dùng để đưa ra chẩn đoán."}
+                                </Text>
+                            </div>
+                        )}
+                    </div>
                 </Card>
             </Col>
             <Col span={8}>
-                <Card title={`Detections (${view.total})`} bodyStyle={{ maxHeight: '500px', overflowY: 'auto' }}>
+                <Card title={<Space>Detections <Tag color="red">{view.total}</Tag></Space>} bodyStyle={{ maxHeight: '500px', overflowY: 'auto' }}>
                     <List
                         dataSource={view.detections}
                         renderItem={(item: any) => {
                             const info = skinConditionInfo[item.label];
-
-
                             return (
                                 <List.Item
-                                    style={{ cursor: 'pointer', transition: '0.3s' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
+                                    style={{ cursor: 'pointer', transition: '0.3s', borderRadius: 8, marginBottom: 8, border: '1px solid #f0f0f0' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e6f7ff'}
                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                     onClick={() => showInfo(item.label)}
                                 >
@@ -87,9 +127,9 @@ const ViewDetail = ({ view }: { view: any }) => {
                                         description={
                                             <div>
                                                 <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                                                    conf: {(item.confidence * 100).toFixed(0)}%
+                                                    Độ tin cậy: {(item.confidence * 100).toFixed(0)}%
                                                 </Text>
-                                                <Text style={{ fontSize: '11px', color: '#1890ff', cursor: 'pointer' }}>Ấn để xem chi tiết</Text>
+                                                <Text style={{ fontSize: '11px', color: '#1890ff' }}>Ấn để xem giải thích</Text>
                                             </div>
                                         }
                                     />

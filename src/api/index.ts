@@ -20,3 +20,18 @@ export const callApiDetection = async (data: {
         }
     })
 }
+
+export const callApiUploadImageProduct = async (file: File): Promise<IBackendRes<IUpload>> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return await axios.post('/cloudinary/upload-product', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+}
+
+export const callApiCreateProduct = async (data: IProduct): Promise<IBackendRes<IProduct>> => {
+    return await axios.post('/products', data);
+}

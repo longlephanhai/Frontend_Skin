@@ -81,4 +81,17 @@ declare global {
         original_images: Record<string, string>;
     }
 
+    interface IUpload {
+        url: string;
+        public_id: string;
+    }
+
+    interface IProduct {
+        _id: string;
+        name: string;
+        price: number;
+        imageUrl: File;
+        description: string;
+    }
+
 }

@@ -1,4 +1,6 @@
 import {
+    DashboardOutlined,
+    ProductOutlined,
     UserOutlined,
 } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
@@ -28,7 +30,7 @@ const SiderComponent = (props: IProps) => {
                 items={[
                     {
                         key: 'admin',
-                        icon: <UserOutlined />,
+                        icon: <DashboardOutlined />,
                         label: 'Dashboard',
                         onClick: () => {
                             navigate('');
@@ -40,6 +42,14 @@ const SiderComponent = (props: IProps) => {
                         label: 'Users',
                         onClick: () => {
                             navigate('user');
+                        }
+                    },
+                    {
+                        key: 'product',
+                        icon: <ProductOutlined />,
+                        label: 'Products',
+                        onClick: () => {
+                            navigate('product');
                         }
                     },
                 ]}

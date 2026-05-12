@@ -35,3 +35,7 @@ export const callApiUploadImageProduct = async (file: File): Promise<IBackendRes
 export const callApiCreateProduct = async (data: IProduct): Promise<IBackendRes<IProduct>> => {
     return await axios.post('/products', data);
 }
+
+export const callApiRecommendProduct = async (data: any): Promise<IBackendRes<any>> => {
+    return await axios.post('/products/recommend', data);
+}

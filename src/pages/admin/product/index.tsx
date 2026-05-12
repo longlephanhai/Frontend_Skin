@@ -111,6 +111,10 @@ const ProductPage = () => {
                         </Upload>
                     </Form.Item>
 
+                    <Form.Item label="Hướng dẫn sử dụng" name="instructions" rules={[{ required: true }]}>
+                        <TextArea showCount maxLength={500} rows={4} />
+                    </Form.Item>
+
                     <Form.Item label="Mô tả sản phẩm" name="description" rules={[{ required: true }]}>
                         <TextArea showCount maxLength={500} rows={4} />
                     </Form.Item>

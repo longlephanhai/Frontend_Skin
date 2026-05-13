@@ -9,6 +9,7 @@ import DashBoardPage from "./pages/admin/dashboard";
 import LoginPage from "./pages/client/auth";
 import ResultPage from "./pages/client/result";
 import ProductPage from "./pages/admin/product";
+import RoutePage from "./pages/client/route";
 
 
 
@@ -24,6 +25,10 @@ const router = createBrowserRouter([
   {
     path: "/result",
     element: <ResultPage />,
+  },
+  {
+    path: "/route",
+    element: <RoutePage />,
   },
   {
     path: "/admin",

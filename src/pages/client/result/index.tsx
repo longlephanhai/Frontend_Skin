@@ -8,14 +8,13 @@ import {
     BulbOutlined,
     HistoryOutlined,
     ScheduleOutlined,
-    CoffeeOutlined,
     MedicineBoxOutlined,
     PlusOutlined,
     DeleteOutlined
 } from '@ant-design/icons';
 import ViewDetail from '../../../components/client/view';
 import { useState, useEffect } from 'react';
-import { callApiRecommendProduct } from '../../../api';
+import { callApiCreateSkinCoach, callApiRecommendProduct } from '../../../api';
 import { Option } from 'antd/es/mentions';
 
 const { Title, Text, Paragraph } = Typography;
@@ -42,7 +41,9 @@ const ResultPage = () => {
         sleepHabit: 'before_12',
         treatments: [] as string[],
         lifestyleFactor: [] as string[],
-        waterIntake: 'enough'
+        waterIntake: 'enough',
+        allergy: [] as string[],
+        priority: '' as string
     });
 
     const handleAddProblem = () => {
@@ -110,13 +111,47 @@ const ResultPage = () => {
 
 
     const handleGenerateRoadmap = async () => {
+
         const finalDetections = validatedResults.filter((r: any) => r.checked);
-        message.loading({ content: 'Gemini đang thiết kế lộ trình...', key: 'roadmap' });
 
-        console.log("Dữ liệu gửi đi tạo lộ trình:", { survey, finalDetections });
+        if (finalDetections.length === 0) {
+            message.warning("Vui lòng chọn ít nhất một vấn đề da để phân tích!");
+            return;
+        }
 
-        setIsSurveyVisible(false);
-        message.success({ content: 'Lộ trình đã được gửi đến email/tài khoản của bạn!', key: 'roadmap' });
+        try {
+            setIsLoading(true);
+            message.loading({ content: 'Chuyên gia AI đang thiết kế lộ trình cho bạn...', key: 'roadmap' });
+
+            const payload = {
+                sessionId: data.session_id,
+                survey: survey,
+                finalDetections: finalDetections,
+                stats: data.stats,
+                total_acne: data.total_acne
+            };
+
+            const response = await callApiCreateSkinCoach(payload);
+
+            if (response.data) {
+                setRecommendData(response.data);
+                setIsSurveyVisible(false);
+
+
+                if (response.data.shouldSeeDoctor) {
+                    setIsModalVisible(true);
+                    message.warning({ content: 'Phát hiện tình trạng da cần lưu ý y khoa!', key: 'roadmap' });
+                } else {
+                    setIsModalVisible(true);
+                    message.success({ content: 'Lộ trình 4 tuần đã sẵn sàng!', key: 'roadmap' });
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi tạo lộ trình:", error);
+            message.error({ content: 'Không thể tạo lộ trình. Vui lòng thử lại!', key: 'roadmap' });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (!data) {
@@ -287,19 +322,41 @@ const ResultPage = () => {
                     <Divider >2. Khảo sát tình trạng & Sinh hoạt</Divider>
 
                     <Row gutter={[32, 24]}>
-                        {/* Nhóm 1: Cơ địa da */}
+                        {/* 1. Loại da */}
                         <Col span={12}>
                             <Text strong>Loại da hiện tại (Sau rửa mặt 2h):</Text>
-                            <Radio.Group style={{ display: 'block', marginTop: 8 }} value={survey.skinType} onChange={e => setSurvey({ ...survey, skinType: e.target.value })}>
+                            <Radio.Group
+                                style={{ display: 'block', marginTop: 8 }}
+                                value={survey.skinType}
+                                onChange={e => setSurvey({ ...survey, skinType: e.target.value })}
+                            >
                                 <Radio value="oily">Đổ dầu</Radio>
                                 <Radio value="dry">Khô căng</Radio>
                                 <Radio value="combination">Hỗn hợp</Radio>
                             </Radio.Group>
                         </Col>
 
+                        {/* 2. Da nhạy cảm (Trường này mới bổ sung để khớp state) */}
+                        <Col span={12}>
+                            <Text strong>Da bạn có dễ bị kích ứng/nhạy cảm?</Text>
+                            <Radio.Group
+                                style={{ display: 'block', marginTop: 8 }}
+                                value={survey.sensitive}
+                                onChange={e => setSurvey({ ...survey, sensitive: e.target.value })}
+                            >
+                                <Radio value="yes">Có</Radio>
+                                <Radio value="no">Không</Radio>
+                            </Radio.Group>
+                        </Col>
+
+                        {/* 3. Cảm giác da */}
                         <Col span={12}>
                             <Text strong>Cảm giác tại vùng da vấn đề:</Text>
-                            <Select style={{ width: '100%', marginTop: 8 }} value={(survey as any).hasPain} placeholder="Chọn cảm giác..." onChange={val => setSurvey({ ...survey, hasPain: val })}>
+                            <Select
+                                style={{ width: '100%', marginTop: 8 }}
+                                value={survey.hasPain}
+                                onChange={val => setSurvey({ ...survey, hasPain: val })}
+                            >
                                 <Option value="none">Bình thường</Option>
                                 <Option value="pain">Đau nhức (Mụn sưng)</Option>
                                 <Option value="itchy">Ngứa râm ran</Option>
@@ -307,10 +364,30 @@ const ResultPage = () => {
                             </Select>
                         </Col>
 
-                        {/* Nhóm 2: Điều trị & Dị ứng */}
+                        {/* 4. Thói quen ngủ (Đã bổ sung để khớp state) */}
+                        <Col span={12}>
+                            <Text strong>Giờ đi ngủ trung bình:</Text>
+                            <Select
+                                style={{ width: '100%', marginTop: 8 }}
+                                value={survey.sleepHabit}
+                                onChange={val => setSurvey({ ...survey, sleepHabit: val })}
+                            >
+                                <Option value="before_11">Trước 23:00</Option>
+                                <Option value="before_12">23:00 - 00:00</Option>
+                                <Option value="after_12">Sau 00:00</Option>
+                            </Select>
+                        </Col>
+
+                        {/* 5. Treatment */}
                         <Col span={12}>
                             <Text strong>Đang sử dụng đặc trị (Treatment):</Text>
-                            <Select mode="multiple" style={{ width: '100%', marginTop: 8 }} placeholder="Chọn hoạt chất đang dùng" onChange={val => setSurvey({ ...survey, treatments: val })}>
+                            <Select
+                                mode="multiple"
+                                style={{ width: '100%', marginTop: 8 }}
+                                placeholder="Chọn hoạt chất..."
+                                value={survey.treatments}
+                                onChange={val => setSurvey({ ...survey, treatments: val })}
+                            >
                                 <Option value="BHA">BHA / Salicylic Acid</Option>
                                 <Option value="Retinol">Retinol / Tretinoin</Option>
                                 <Option value="VitaminC">Vitamin C</Option>
@@ -319,13 +396,15 @@ const ResultPage = () => {
                             </Select>
                         </Col>
 
+                        {/* 6. Dị ứng */}
                         <Col span={12}>
                             <Text strong>Tiền sử dị ứng thành phần:</Text>
                             <Select
                                 mode="tags"
                                 style={{ width: '100%', marginTop: 8 }}
-                                placeholder="Nhập tên thành phần bị dị ứng (nếu có)"
-                                onChange={val => setSurvey({ ...survey, allergy: val } as any)}
+                                placeholder="Nhập thành phần..."
+                                value={survey.allergy}
+                                onChange={val => setSurvey({ ...survey, allergy: val })}
                             >
                                 <Option value="fragrance">Hương liệu (Fragrance)</Option>
                                 <Option value="alcohol">Cồn khô (Alcohol Denat)</Option>
@@ -333,26 +412,40 @@ const ResultPage = () => {
                             </Select>
                         </Col>
 
-                        {/* Nhóm 3: Thói quen sinh hoạt */}
+                        {/* 7. Kem chống nắng */}
                         <Col span={12}>
-                            <Text strong>Thói quen dùng Kem chống nắng:</Text>
-                            <Radio.Group style={{ display: 'block', marginTop: 8 }} value={survey.sunscreen} onChange={e => setSurvey({ ...survey, sunscreen: e.target.value })}>
+                            <Text strong>Dùng Kem chống nắng:</Text>
+                            <Radio.Group
+                                style={{ display: 'block', marginTop: 8 }}
+                                value={survey.sunscreen}
+                                onChange={e => setSurvey({ ...survey, sunscreen: e.target.value })}
+                            >
                                 <Radio value="yes">Mỗi ngày</Radio>
                                 <Radio value="no">Không dùng</Radio>
                             </Radio.Group>
                         </Col>
 
+                        {/* 8. Lượng nước */}
                         <Col span={12}>
-                            <Text strong><CoffeeOutlined /> Lượng nước uống hằng ngày:</Text>
-                            <Radio.Group style={{ display: 'block', marginTop: 8 }} value={survey.waterIntake} onChange={e => setSurvey({ ...survey, waterIntake: e.target.value })}>
+                            <Text strong>Lượng nước uống hằng ngày:</Text>
+                            <Radio.Group
+                                style={{ display: 'block', marginTop: 8 }}
+                                value={survey.waterIntake}
+                                onChange={e => setSurvey({ ...survey, waterIntake: e.target.value })}
+                            >
                                 <Radio value="enough">{">"} 2 Lít</Radio>
                                 <Radio value="less">{"<"} 1 Lít</Radio>
                             </Radio.Group>
                         </Col>
 
+                        {/* 9. Yếu tố lối sống */}
                         <Col span={24}>
                             <Text strong>Yếu tố ảnh hưởng (Lifestyle):</Text>
-                            <Checkbox.Group style={{ width: '100%', marginTop: 8 }} onChange={val => setSurvey({ ...survey, lifestyleFactor: val as string[] })}>
+                            <Checkbox.Group
+                                style={{ width: '100%', marginTop: 8 }}
+                                value={survey.lifestyleFactor}
+                                onChange={val => setSurvey({ ...survey, lifestyleFactor: val as string[] })}
+                            >
                                 <Row>
                                     <Col span={6}><Checkbox value="late_night">Thức khuya</Checkbox></Col>
                                     <Col span={6}><Checkbox value="stress">Căng thẳng</Checkbox></Col>
@@ -362,23 +455,22 @@ const ResultPage = () => {
                             </Checkbox.Group>
                         </Col>
 
-                        {/* Nhóm 4: Mục tiêu & Ghi chú */}
+                        {/* 10. Mục tiêu ưu tiên */}
                         <Col span={24}>
                             <Divider style={{ margin: '8px 0' }} />
                             <Text strong>Mục tiêu bạn muốn ưu tiên nhất:</Text>
                             <Select
                                 style={{ width: '100%', marginTop: 8 }}
-                                placeholder="Chọn mục tiêu ưu tiên cải thiện"
-                                onChange={val => setSurvey({ ...survey, priority: val } as any)}
+                                placeholder="Chọn mục tiêu..."
+                                value={survey.priority || undefined}
+                                onChange={val => setSurvey({ ...survey, priority: val })}
                             >
                                 <Option value="clear_acne">Trị mụn & Gom cồi nhanh</Option>
                                 <Option value="fade_spots">Mờ thâm & Sáng da</Option>
-                                <Option value="repair">Phục hồi da nhạy cảm/Kích ứng</Option>
+                                <Option value="repair">Phục hồi da nhạy cảm</Option>
                                 <Option value="pore">Se khít lỗ chân lông</Option>
                             </Select>
                         </Col>
-
-
                     </Row>
                 </div>
             </Modal>

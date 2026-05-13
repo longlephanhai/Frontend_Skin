@@ -39,3 +39,11 @@ export const callApiCreateProduct = async (data: IProduct): Promise<IBackendRes<
 export const callApiRecommendProduct = async (data: any): Promise<IBackendRes<any>> => {
     return await axios.post('/products/recommend', data);
 }
+
+export const callApiCreateSkinCoach = async (data: any): Promise<IBackendRes<any>> => {
+    return await axios.post('/skincoach', data);
+}
+
+export const callApiGetSkinCoach = async (): Promise<IBackendRes<any>> => {
+    return await axios.get('/skincoach');
+}

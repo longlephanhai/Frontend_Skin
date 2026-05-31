@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Modal, Button, Alert, Spin } from 'antd';
 import { LoadingOutlined, CameraOutlined } from '@ant-design/icons';
 
-import { checkFacePose } from '../../../helper'; 
+import { checkFacePose } from '../../../helper';
 
 interface CameraCaptureModalProps {
     visible: boolean;
@@ -82,14 +82,14 @@ const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                     if (active) {
                         setPoseStatus({
                             valid: result.valid,
-                            message: result.valid ? `Góc mặt hợp lệ! Có thể chụp.` : result.message
+                            message: result.valid ? `Góc mặt hợp lệ! Có thể chụp.` : (result.message ?? 'Góc mặt không hợp lệ')
                         });
                     }
                 } catch (error) {
                     console.error("Lỗi track pose:", error);
                 }
             }
-            
+
             if (active) requestAnimationFrame(trackPose);
         };
 
@@ -110,12 +110,12 @@ const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
+
         const ctx = canvas.getContext('2d');
         if (ctx) {
             // Vẽ frame video hiện tại lên canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+
             // Chuyển canvas thành Blob/File để gửi lên API của bạn
             canvas.toBlob((blob) => {
                 if (blob) {
@@ -147,7 +147,7 @@ const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                     {isCameraLoading && (
                         <Spin indicator={<LoadingOutlined style={{ fontSize: 40, color: '#fff' }} spin />} />
                     )}
-                    
+
                     <video
                         ref={videoRef}
                         autoPlay
@@ -155,7 +155,7 @@ const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                         muted
                         style={{
                             width: '100%', height: '100%', objectFit: 'cover',
-                            transform: 'scaleX(-1)' 
+                            transform: 'scaleX(-1)'
                         }}
                     />
                 </div>

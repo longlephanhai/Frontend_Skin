@@ -15,6 +15,7 @@ import {
 
 import { callApiGetSkinCoach } from "../../../api";
 import SkinUploadSection from '../../../components/client/upload/indexl';
+import ExplainBlock from '../../../components/client/aihelper/ExplainBlock';
 
 const { Text, Paragraph } = Typography;
 
@@ -116,7 +117,7 @@ const RoutePage = () => {
     return (
         <div style={{ maxWidth: 1050, margin: '0 auto', padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
 
-            {/* TỔNG QUAN TÌNH TRẠNG DA */}
+
             <Card style={{ marginBottom: 24, borderRadius: 16, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                 <Row gutter={[24, 24]} align="stretch">
                     <Col xs={24} md={12} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -164,8 +165,6 @@ const RoutePage = () => {
             </Card>
 
 
-
-            {/* KHU VỰC TABS SỰ KIỆN 30 NGÀY */}
             <Tabs
                 activeKey={activeKey}
                 onChange={handleTabChange}
@@ -177,7 +176,7 @@ const RoutePage = () => {
                     const doneTasks = dayData.tasks.filter((t: any) => completedTasks[`${dayKey}-${t.name}`]).length;
                     const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 100;
 
-                    // Kiểm tra trạng thái khóa tab theo logic ngày trước đó phải xong
+
                     const isLocked = dayData.day > data.currentDay && !isDayFullyCompleted(dayData.day - 1);
 
                     return {
@@ -192,7 +191,7 @@ const RoutePage = () => {
                         children: (
                             <div style={{ padding: '24px', background: '#fff', borderRadius: '0 12px 12px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', border: '1px solid #f0f0f0' }}>
 
-                                {/* HEADER CỦA TAB NGÀY HIỆN TẠI */}
+
                                 <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 16 }}>
                                     <Col xs={24} sm={16}>
                                         <Tag color="blue" style={{ fontSize: 12, padding: '4px 8px', marginBottom: 8, fontWeight: 600 }}>
@@ -212,7 +211,7 @@ const RoutePage = () => {
                                 </Row>
 
                                 <Row gutter={[24, 24]}>
-                                    {/* CỘT TRÁI: DANH SÁCH DUY TRÌ THÓI QUEN CŨ (MAINTAIN) */}
+
                                     <Col xs={24} md={10}>
                                         <Card
                                             title={<span style={{ color: '#096dd9' }}><SyncOutlined spin={dayData.maintain.length > 0} /> Thói Quen Cần Duy Trì</span>}
@@ -241,7 +240,7 @@ const RoutePage = () => {
                                         </Card>
                                     </Col>
 
-                                    {/* CỘT PHẢI: DANH SÁCH THỰC HIỆN NHIỆM VỤ MỚI TRONG NGÀY (TASKS) */}
+
                                     <Col xs={24} md={14}>
                                         <Card
                                             title={<span><ThunderboltOutlined style={{ color: '#faad14' }} /> Nhiệm Vụ Mới Hôm Nay</span>}
@@ -249,50 +248,55 @@ const RoutePage = () => {
                                             style={{ borderRadius: 12, height: '100%' }}
                                         >
                                             {dayData.tasks && dayData.tasks.length > 0 ? (
+
                                                 <List
                                                     dataSource={dayData.tasks}
                                                     renderItem={(task: any) => {
                                                         const taskUniqueId = `${dayKey}-${task.name}`;
                                                         const isChecked = completedTasks[taskUniqueId];
                                                         return (
-                                                            <Card
-                                                                size="small"
-                                                                style={{
-                                                                    marginBottom: 12,
-                                                                    borderRadius: 8,
-                                                                    backgroundColor: isChecked ? '#f6ffed' : '#ffffff',
-                                                                    borderLeft: isChecked ? '4px solid #52c41a' : '4px solid #fa8c16',
-                                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                                                                    transition: 'all 0.3s'
-                                                                }}
-                                                                bodyStyle={{ padding: '12px 16px' }}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={isChecked}
-                                                                    onChange={() => handleCheckTask(taskUniqueId, dayData.day)}
-                                                                    style={{ width: '100%', alignItems: 'flex-start' }}
+                                                            <ExplainBlock>
+                                                                <Card
+                                                                    size="small"
+                                                                    style={{
+                                                                        marginBottom: 12,
+                                                                        borderRadius: 8,
+                                                                        backgroundColor: isChecked ? '#f6ffed' : '#ffffff',
+                                                                        borderLeft: isChecked ? '4px solid #52c41a' : '4px solid #fa8c16',
+                                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                                                                        transition: 'all 0.3s'
+                                                                    }}
+                                                                    bodyStyle={{ padding: '12px 16px' }}
                                                                 >
-                                                                    <div style={{ marginLeft: 8, marginTop: -2 }}>
-                                                                        <div style={{ marginBottom: 4 }}>
-                                                                            <Text delete={isChecked} strong={!isChecked} style={{ color: isChecked ? '#8c8c8c' : '#262626', fontSize: 14 }}>
-                                                                                {task.name}
-                                                                            </Text>
+                                                                    <Checkbox
+                                                                        checked={isChecked}
+                                                                        onChange={() => handleCheckTask(taskUniqueId, dayData.day)}
+                                                                        style={{ width: '100%', alignItems: 'flex-start' }}
+                                                                    >
+                                                                        <div style={{ marginLeft: 8, marginTop: -2 }}>
+                                                                            <div style={{ marginBottom: 4 }}>
+                                                                                <Text delete={isChecked} strong={!isChecked} style={{ color: isChecked ? '#8c8c8c' : '#262626', fontSize: 14 }}>
+                                                                                    {task.name}
+                                                                                </Text>
+                                                                            </div>
+                                                                            <Space size={4} style={{ flexWrap: 'wrap' }}>
+                                                                                <span style={{ fontSize: 11, color: '#8c8c8c', marginRight: 4 }}>{task.topic}</span>
+                                                                                <Tag color={getTagColor(task.tag)} style={{ fontSize: 10, borderRadius: 4, lineHeight: '16px' }}>
+                                                                                    {task.tag.toUpperCase()}
+                                                                                </Tag>
+                                                                                <Tag color="default" style={{ fontSize: 10, borderRadius: 4, lineHeight: '16px' }}>
+                                                                                    {getTimeOfDayLabel(task.timeOfDay)}
+                                                                                </Tag>
+                                                                            </Space>
                                                                         </div>
-                                                                        <Space size={4} style={{ flexWrap: 'wrap' }}>
-                                                                            <span style={{ fontSize: 11, color: '#8c8c8c', marginRight: 4 }}>{task.topic}</span>
-                                                                            <Tag color={getTagColor(task.tag)} style={{ fontSize: 10, borderRadius: 4, lineHeight: '16px' }}>
-                                                                                {task.tag.toUpperCase()}
-                                                                            </Tag>
-                                                                            <Tag color="default" style={{ fontSize: 10, borderRadius: 4, lineHeight: '16px' }}>
-                                                                                {getTimeOfDayLabel(task.timeOfDay)}
-                                                                            </Tag>
-                                                                        </Space>
-                                                                    </div>
-                                                                </Checkbox>
-                                                            </Card>
+                                                                    </Checkbox>
+                                                                </Card>
+                                                            </ExplainBlock>
+
                                                         );
                                                     }}
                                                 />
+
                                             ) : (
                                                 <div style={{ textAlign: 'center', padding: '30px 0' }}>
                                                     <Empty

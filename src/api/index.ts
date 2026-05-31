@@ -47,3 +47,7 @@ export const callApiCreateSkinCoach = async (data: any): Promise<IBackendRes<any
 export const callApiGetSkinCoach = async (): Promise<IBackendRes<any>> => {
     return await axios.get('/skincoach');
 }
+
+export const callApiExplainTask = async (taskName: string): Promise<IBackendRes<IExplainTask>> => {
+    return await axios.post('/ai-assistant/explain-task', { task: taskName });
+}

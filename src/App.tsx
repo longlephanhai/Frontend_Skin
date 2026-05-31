@@ -10,6 +10,7 @@ import LoginPage from "./pages/client/auth";
 import ResultPage from "./pages/client/result";
 import ProductPage from "./pages/admin/product";
 import RoutePage from "./pages/client/route";
+import AIHelper from "./components/client/aihelper/AIHelper";
 
 
 
@@ -52,9 +53,11 @@ const router = createBrowserRouter([
 
 function App() {
 
-
   return (
-    <RouterProvider router={router} />
+    <>
+      <RouterProvider router={router} />
+      <AIHelper />
+    </>
   )
 }
 

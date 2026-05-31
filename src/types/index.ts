@@ -94,4 +94,12 @@ declare global {
         description: string;
     }
 
+    interface IExplainTask {
+        originalTask: string;
+        whyItMatters: string;
+        steps: string[];
+        caution: string;
+    }
+
 }
+

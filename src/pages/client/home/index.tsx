@@ -16,7 +16,7 @@ const Homepage = () => {
             <HeaderComponent />
 
             <Content>
-                {/* Hero Section */}
+               
                 <RecoveryHero />
 
                 <SkinUploadSection />

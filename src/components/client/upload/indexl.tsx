@@ -11,6 +11,7 @@ import * as faceapi from 'face-api.js';
 import { checkFacePose } from '../../../helper';
 import { callApiDetection } from '../../../api';
 import { useNavigate } from 'react-router-dom';
+import CameraCaptureModal from '../camera';
 
 
 const { Title, Text } = Typography;
@@ -35,6 +36,9 @@ const SkinUploadSection = () => {
         front: { file: null, preview: null, isValidating: false },
         right: { file: null, preview: null, isValidating: false },
     });
+
+    const [cameraTarget, setCameraTarget] = useState<{ position: Position; label: string } | null>(null);
+
     const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -131,6 +135,15 @@ const SkinUploadSection = () => {
         setLoading(false);
     };
 
+    const handleCameraCapture = (file: File, previewUrl: string) => {
+        if (!cameraTarget) return;
+        setData(prev => ({
+            ...prev,
+            [cameraTarget.position]: { file, preview: previewUrl, isValidating: false }
+        }));
+        message.success(`Đã chụp và lưu ảnh ${labelMap[cameraTarget.position]}!`);
+    };
+
     const UploadBox: React.FC<{ position: Position; label: string }> = ({ position, label }) => {
         const item = data[position];
         const hasImage = !!item.preview;
@@ -180,6 +193,15 @@ const SkinUploadSection = () => {
 
                     {!hasImage && !item.isValidating ? (
                         <Space direction="vertical" style={{ width: '100%' }}>
+
+                            <Button
+                                block type="primary" icon={<ScanOutlined />}
+                                onClick={() => setCameraTarget({ position, label })}
+                                disabled={!modelsLoaded}
+                            >
+                                Chụp trực tiếp
+                            </Button>
+
                             <Button
                                 block type="dashed" icon={<PictureOutlined />}
                                 onClick={() => document.getElementById(`file-${position}`)?.click()}
@@ -201,6 +223,8 @@ const SkinUploadSection = () => {
             </Col>
         );
     };
+
+
 
     return (
         <div style={{ padding: '80px 20px', background: '#ffffff' }}>
@@ -232,7 +256,18 @@ const SkinUploadSection = () => {
                     </Button>
                 </div>
             </div>
+
+            <CameraCaptureModal
+                visible={cameraTarget !== null}
+                position={cameraTarget?.position || 'front'}
+                label={cameraTarget?.label || ''}
+                onClose={() => setCameraTarget(null)}
+                onCapture={handleCameraCapture}
+            />
+
         </div>
+
+
     );
 };
 
